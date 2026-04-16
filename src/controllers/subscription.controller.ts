@@ -52,7 +52,7 @@ export const getFeed = async (req: Request, res: Response): Promise<void> => {
     select: { creatorId: true },
   });
 
-  const subscribedIds = subscriptions.map((s) => s.creatorId);
+  const subscribedIds = subscriptions.map((s:{creatorId: string}) => s.creatorId);
 
   const [subscribedVideos, otherVideos] = await Promise.all([
     prisma.video.findMany({
