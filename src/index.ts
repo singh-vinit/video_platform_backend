@@ -12,6 +12,7 @@ const io = new SocketIOServer(server, {
     methods: ["GET", "POST"],
   },
   path: "/socket.io",
+  transports: ["websocket"],
 });
 
 setupSocket(io);
