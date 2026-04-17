@@ -11,8 +11,7 @@ const io = new SocketIOServer(server, {
     origin: "*", // Lock this down to your frontend URL in production
     methods: ["GET", "POST"],
   },
-  path: "/socket.io",
-  transports: ["websocket"],
+  transports: ["websocket", "polling"],
 });
 
 setupSocket(io);
