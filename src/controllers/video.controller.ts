@@ -1,5 +1,20 @@
 import { Request, Response } from "express";
 import { prisma } from "../db/prisma";
+import supabase from "../utils/supabase";
+
+// Extracts "videos/filename.mp4" from the full Supabase public URL
+function extractStoragePath(url: string): string | null {
+  try {
+    // Supabase public URLs look like:
+    // https://xyz.supabase.co/storage/v1/object/public/videos/filename.mp4
+    const marker = "/object/public/";
+    const index = url.indexOf(marker);
+    if (index === -1) return null;
+    return url.substring(index + marker.length);
+  } catch {
+    return null;
+  }
+}
 
 // Frontend uploads to Supabase directly and sends us the URL
 export const uploadVideo = async (
@@ -76,6 +91,20 @@ export const deleteVideo = async (
   if (!video || video.creatorId !== req.user!.id) {
     res.status(403).json({ message: "Not allowed" });
     return;
+  }
+
+  //extract storage path from URL
+  const storagePath = extractStoragePath(video.url);
+  if (storagePath) {
+    const bucket = process.env.SUPABASE_BUCKET || "creator_videos";
+    const filePath = storagePath.replace(`${bucket}/`, ""); // Remove bucket prefix 
+    const { error } = await supabase.storage.from(bucket).remove([filePath]);
+    if (error) {
+      // Log but don't block — DB record should still be deleted
+      console.error("Supabase storage delete failed:", error.message);
+    }else {
+      console.log("video deleted from supabase storage:", storagePath)
+    }
   }
 
   await prisma.video.delete({ where: { id: req.params.id as string } });
